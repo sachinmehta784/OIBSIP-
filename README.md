@@ -1,37 +1,42 @@
-# Iris Species Classifier
+# Unemployment Analysis: India
 
-An interactive machine-learning project that classifies Iris flowers (**Setosa**, **Versicolor**, **Virginica**) using the classic Fisher's Iris dataset.
+An interactive exploratory data analysis (EDA) of India's unemployment rates — regional and temporal trends, the COVID-19 pandemic's impact, correlation analysis, and an embedded Jupyter Notebook walkthrough. Dataset source: CMIE (Centre for Monitoring Indian Economy), "Unemployment in India".
 
 The project has two parts:
 
-1. **Interactive web app** (`src/`) — a React + TypeScript + Vite dashboard that walks through the full ML workflow: EDA, visualizations (pairplot/box plots), feature selection, model evaluation (Logistic Regression, KNN, Decision Tree, Random Forest), and a live predictor. Everything runs in the browser — there is **no API key and no backend required**.
-2. **Python analysis** (`iris_classification.py` and `iris_flower_classification.ipynb`) — the actual scikit-learn code that trains and evaluates the models, used as the source of truth for the numbers shown in the web app.
+1. **Interactive web app** (`src/`) — a React + TypeScript + Vite dashboard with KPI stats, a time-series chart, top-states chart, pre/post-COVID comparison, a regional (urban vs. rural) breakdown, a correlation heatmap, a raw data inspector, and an embedded, downloadable Jupyter Notebook viewer. Everything runs client-side in the browser — **no API key and no backend required**.
+2. **Standalone dataset + notebook** (`public/Unemployment_in_India.csv`, `public/unemployment_analysis_india.ipynb`) — the same data and analysis as plain files you can open directly in Jupyter/VS Code outside the web app.
 
-> **Note on the original export:** this project was originally generated with Google AI Studio. That template ships with an Express server, a Gemini API key requirement, and other scaffolding that this app never actually uses. All of that has been removed below — this app is a plain static site with no external API calls.
+> **Note on the original export:** this project was originally generated with Google AI Studio. That template ships with an Express server, a Gemini API key requirement, and other scaffolding this app never actually uses. All of that has been removed below — this is a plain static site with no external API calls.
 
 ---
 
 ## Project structure
 
 ```
-iris-species-classifier/
+unemployment-analysis-india/
 ├── src/
-│   ├── App.tsx                  # Main app shell / tab routing
-│   ├── main.tsx                 # React entry point
-│   ├── index.css                # Tailwind CSS entry
-│   ├── types.ts                 # Shared TypeScript types
-│   ├── data/irisData.ts         # The 150-row Iris dataset
-│   ├── utils/mlEngine.ts        # Train/test split + model logic (mirrors the Python script)
-│   ├── utils/notebookGenerator.ts # Generates the downloadable .ipynb / .py from in-app data
-│   └── components/              # Dashboard views (EDA, visuals, models, predictor, etc.)
-├── iris_classification.py       # Standalone Python script (scikit-learn)
-├── iris_flower_classification.ipynb  # Jupyter Notebook version
-├── requirements.txt             # Python dependencies
+│   ├── App.tsx                       # Main app shell / tab routing
+│   ├── main.tsx                      # React entry point
+│   ├── index.css                     # Tailwind CSS entry
+│   ├── types.ts                      # Shared TypeScript types
+│   ├── data/unemploymentData.ts      # Source dataset + derived stats/aggregates (source of truth)
+│   ├── data/notebookData.ts          # Notebook cell content (source of truth for the .ipynb)
+│   ├── utils/downloadHelpers.ts      # "Download CSV / Download notebook" logic
+│   └── components/                   # Dashboard views (KPIs, charts, heatmap, notebook viewer, etc.)
+├── scripts/
+│   └── generate_downloads.ts         # Regenerates the two files below from src/data/*
+├── public/
+│   ├── Unemployment_in_India.csv     # Pre-generated dataset (served as a static file)
+│   └── unemployment_analysis_india.ipynb  # Pre-generated notebook (served as a static file)
+├── requirements.txt                  # Python dependencies for the notebook
 ├── index.html
 ├── package.json
 ├── vite.config.ts
 └── tsconfig.json
 ```
+
+**How the data flows:** `src/data/unemploymentData.ts` and `src/data/notebookData.ts` are the actual source of truth — they define the dataset and generate the CSV/notebook content in-browser (via `Blob` download) when you click "Download" in the app. The two files under `public/` are a pre-generated, ready-to-open copy of the same data. If you ever edit the source data files, regenerate the copies under `public/` with `npm run generate:downloads` (see below) so they stay in sync — the original project had no way to do this, since the script existed but wasn't wired into `package.json`.
 
 ---
 
@@ -40,12 +45,12 @@ iris-species-classifier/
 ### Prerequisites
 - [Node.js](https://nodejs.org/) **v18 or later** (v20+ recommended)
 - npm (comes bundled with Node.js)
-- VS Code with the standard **ESLint**/**TypeScript** support (built in — no extra config needed)
+- VS Code with the standard TypeScript support (built in — no extra extensions required)
 
 ### Steps
 
 1. **Open the folder in VS Code**
-   `File → Open Folder…` and select `iris-species-classifier/`.
+   `File → Open Folder…` and select `unemployment-analysis-india/`.
 
 2. **Open a terminal in VS Code**
    `Terminal → New Terminal` (or `` Ctrl+` ``).
@@ -63,15 +68,20 @@ iris-species-classifier/
    ```
    ➜  Local:   http://localhost:3000/
    ```
-   Open it in your browser (or `Ctrl+Click` the link in the VS Code terminal). The dev server has hot-reload — edits to any file in `src/` update the browser instantly.
+   Open it in your browser (or `Ctrl+Click` the link in the VS Code terminal). Edits to any file in `src/` hot-reload instantly.
 
 5. **Type-check the code (optional but recommended)**
    ```bash
    npm run lint
    ```
-   This runs `tsc --noEmit` and reports any TypeScript errors without emitting files.
 
-6. **Build for production (optional)**
+6. **Regenerate the CSV/notebook if you change the dataset (optional)**
+   ```bash
+   npm run generate:downloads
+   ```
+   This overwrites `public/Unemployment_in_India.csv` and `public/unemployment_analysis_india.ipynb` from the current contents of `src/data/unemploymentData.ts` / `src/data/notebookData.ts`.
+
+7. **Build for production (optional)**
    ```bash
    npm run build
    npm run preview   # serve the production build locally to sanity-check it
@@ -82,17 +92,15 @@ That's it — **no `.env` file, no API key, and no server process are needed** t
 
 ---
 
-## Part 2 — Run the Python analysis in VS Code
-
-The Python script and notebook reproduce the model training/evaluation shown in the web app.
+## Part 2 — Run the notebook in VS Code
 
 ### Prerequisites
 - Python 3.9+
-- VS Code with the **Python** extension (and **Jupyter** extension if you want to run the notebook)
+- VS Code with the **Python** and **Jupyter** extensions
 
 ### Steps
 
-1. **Create and activate a virtual environment** (recommended so dependencies don't pollute your global Python install)
+1. **Create and activate a virtual environment**
 
    macOS/Linux:
    ```bash
@@ -111,32 +119,28 @@ The Python script and notebook reproduce the model training/evaluation shown in 
    ```
 
 3. **Select the interpreter in VS Code**
-   Open the Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) → `Python: Select Interpreter` → choose the `.venv` you just created.
+   Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`) → `Python: Select Interpreter` → choose the `.venv` you just created.
 
-4. **Run the script**
-   ```bash
-   python iris_classification.py
-   ```
-   This prints dataset stats, ANOVA feature-selection scores, and accuracy/precision/recall for all four models to the terminal, and saves two chart images (`iris_pairplot.png`, `iris_boxplots.png`) to the project folder.
+4. **Open and run the notebook**
+   Open `public/unemployment_analysis_india.ipynb` in VS Code, pick the same `.venv` kernel in the top-right kernel selector, and run all cells (`Run All`).
 
-5. **Or run the notebook**
-   Open `iris_flower_classification.ipynb` in VS Code, pick the same `.venv` kernel in the top-right kernel selector, and run all cells (`Run All`).
+   ⚠️ The notebook loads the data with `pd.read_csv('Unemployment_in_India.csv')` — a path **relative to the notebook's own folder**. Since the CSV lives right next to it in `public/`, this works as long as you keep both files together (which they already are). If you move the notebook elsewhere, move the CSV with it or update the path.
 
 ---
 
 ## What was fixed from the original AI Studio export
 
-- Removed unused dependencies that were never imported anywhere in the code: `@google/genai`, `express`, `dotenv`, `@types/express`, `esbuild`, `tsx`, `autoprefixer` (these came from AI Studio's generic template and pulled in ~130 extra packages for nothing).
-- Removed `.env.example` / `metadata.json` / the `public/assets/aistudio` folder — these referenced a `GEMINI_API_KEY` and `APP_URL` that the app **never actually calls**, since this project makes no Gemini/API requests at all.
+- Removed unused dependencies that were never imported anywhere in the code: `@google/genai`, `express`, `dotenv`, `@types/express`, `esbuild`, `autoprefixer`, `motion` (these came from AI Studio's generic template and pulled in extra packages for nothing).
+- Removed `.env.example` / `metadata.json` / the `public/assets/aistudio` folder — these referenced a `GEMINI_API_KEY` and `APP_URL` that the app **never actually calls**, since it makes no Gemini/API requests at all.
 - Removed `bun.lock` and a stale `package-lock.json` so the project uses a single, consistent package manager (npm) and regenerated a clean lockfile.
-- Simplified `vite.config.ts`: removed AI-Studio-specific HMR/file-watch environment flags that had no effect outside AI Studio, and set a fixed dev port with `open: true` for convenience.
-- Fixed `package.json`: gave the project a real name/version and a `dev` script that doesn't depend on AI Studio's host binding flags.
-- Verified the whole project actually type-checks (`tsc --noEmit`) and builds (`vite build`) cleanly.
-- Verified `iris_classification.py` runs end-to-end against a live scikit-learn install with no errors.
-- Added `requirements.txt` for the Python side (previously undocumented) and this README with real run instructions for VS Code, replacing the generic AI Studio boilerplate README.
+- **Wired up `scripts/generate_downloads.ts`**: it existed in the original export and correctly regenerates the CSV/notebook from the source data, but no npm script pointed to it, so there was no documented way to run it. Added `npm run generate:downloads`, kept `tsx` as a devDependency to run it (verified it reproduces the checked-in `public/` files byte-for-byte).
+- Simplified `vite.config.ts`: removed AI-Studio-specific HMR/file-watch environment flags that had no effect outside AI Studio, and set a fixed dev port with `open: true`.
+- Fixed `package.json`: gave the project a real name/version and a `dev` script that doesn't depend on AI Studio's host-binding flags.
+- Verified the whole project type-checks (`tsc --noEmit`) and builds (`vite build`) cleanly, and verified the notebook executes end-to-end with no errors (`jupyter nbconvert --execute`).
+- Added `requirements.txt` for the notebook (previously undocumented) and this README with real run instructions for VS Code, replacing the generic AI Studio boilerplate README.
 
 ## Tech stack
 
-- **Frontend:** React 19, TypeScript, Vite 6, Tailwind CSS 4, lucide-react (icons), Prism.js (code highlighting)
-- **ML/Data:** Python 3, scikit-learn, pandas, NumPy, Matplotlib, Seaborn
-- **Dataset:** Fisher's Iris dataset (1936), 150 samples, via `sklearn.datasets.load_iris()`
+- **Frontend:** React 19, TypeScript, Vite 6, Tailwind CSS 4, Recharts (charts), lucide-react (icons)
+- **Notebook/Data:** Python 3, pandas, NumPy, Matplotlib, Seaborn, Jupyter
+- **Dataset:** Unemployment in India (CMIE), by state, area (urban/rural), and month
